@@ -1,60 +1,62 @@
+#include<sys/time.h>
+#include<time.h>
 #include<stdlib.h>
 #include<unistd.h>
 #include<stdio.h>
 #include "threadpool.h"
 
+
 void* work(void* arg)
 {
-    char *p = (char*) arg;
-    printf("threadpool callback fuction : %s.\n", p);
-    sleep(1);
+    int *p = (int*) arg;
+    printf("threadID is %lu,threadpool callback fuction:%d.\n",
+           pthread_self(),
+           *p);
+    int k = 2000000;
+    while(k > 0) {
+        k--;
+    }
+    free(p);
 }
 
 int main(void)
 {
-    struct threadpool *pool = threadpool_init(10, 20);
-    threadpool_add_job(pool, work, "1");
-    threadpool_add_job(pool, work, "2");
-    threadpool_add_job(pool, work, "3");
-    threadpool_add_job(pool, work, "4");
-    threadpool_add_job(pool, work, "5");
-    threadpool_add_job(pool, work, "6");
-    threadpool_add_job(pool, work, "7");
-    threadpool_add_job(pool, work, "8");
-    threadpool_add_job(pool, work, "9");
-    threadpool_add_job(pool, work, "10");
-    threadpool_add_job(pool, work, "11");
-    threadpool_add_job(pool, work, "12");
-    threadpool_add_job(pool, work, "13");
-    threadpool_add_job(pool, work, "14");
-    threadpool_add_job(pool, work, "15");
-    threadpool_add_job(pool, work, "16");
-    threadpool_add_job(pool, work, "17");
-    threadpool_add_job(pool, work, "18");
-    threadpool_add_job(pool, work, "19");
-    threadpool_add_job(pool, work, "20");
-    threadpool_add_job(pool, work, "21");
-    threadpool_add_job(pool, work, "22");
-    threadpool_add_job(pool, work, "23");
-    threadpool_add_job(pool, work, "24");
-    threadpool_add_job(pool, work, "25");
-    threadpool_add_job(pool, work, "26");
-    threadpool_add_job(pool, work, "27");
-    threadpool_add_job(pool, work, "28");
-    threadpool_add_job(pool, work, "29");
-    threadpool_add_job(pool, work, "30");
-    threadpool_add_job(pool, work, "31");
-    threadpool_add_job(pool, work, "32");
-    threadpool_add_job(pool, work, "33");
-    threadpool_add_job(pool, work, "34");
-    threadpool_add_job(pool, work, "35");
-    threadpool_add_job(pool, work, "36");
-    threadpool_add_job(pool, work, "37");
-    threadpool_add_job(pool, work, "38");
-    threadpool_add_job(pool, work, "39");
-    threadpool_add_job(pool, work, "40");
+    struct timeval time_start;
+    gettimeofday(&time_start, NULL);
+    printf("start now, sec is %ld, m_sec is %ld \n", 
+            time_start.tv_sec, 
+            time_start.tv_usec);
+    int thread_nums = 4;
+    struct threadpool *pool = threadpool_init(thread_nums, NULL);
 
-    sleep(5);
+    int tasks = 50000;
+    int i = 0;
+    int j = 0;
+    for(j=0; j<tasks; ) {
+        for(i=0; i<thread_nums && j<tasks; i++ ) {
+            int *par = malloc(sizeof(int));
+            *par = j;
+            threadpool_add_job(pool, i, work, par);
+            j++;
+        }
+    }
+    struct timeval time_add_task_end;
+    gettimeofday(&time_add_task_end, NULL);
     threadpool_destroy(pool);
+
+    struct timeval time_end;
+    gettimeofday(&time_end, NULL);
+    printf("end now, sec is %ld, m_sec is %ld \n", 
+            time_end.tv_sec, 
+            time_end.tv_usec);
+
+    printf("add tasks end at sec is %ld, m_sec is %ld \n", 
+            time_add_task_end.tv_sec - time_start.tv_sec,
+            time_add_task_end.tv_usec - time_start.tv_usec);
+
+    printf("interval is %ld, m_sec is %ld \n", 
+            time_end.tv_sec - time_start.tv_sec,
+            time_end.tv_usec - time_start.tv_usec);
+
     return 0;
 }
